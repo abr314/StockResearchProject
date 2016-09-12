@@ -1,6 +1,8 @@
 import args as args
 import pandas as pd
 import datetime_helpers as dth
+from datetime_helpers import datetime
+import numpy
 __author__ = 'abr314'
 
 
@@ -21,37 +23,51 @@ def return_day_chart(df=pd.DataFrame, dto=dth.datetime.date):
         print('Error: ' + e)
 
 
-def return_all_days_since(df=pd.DataFrame, dto=dth.datetime.date, days=int):
+def return_days_in_range(df=pd.DataFrame, starting_minute=datetime.datetime.minute,
+                         ending_minute=datetime.datetime.minute):
 
     """
 
-    :param df: Takes the original data frame
-    :param dto: Reference datetime object
-    :param days: Days to count back, skips non-business days
-    :return: array with all of the days charts
+    :param df: Master data frame
+    :param starting_minute: user-selected start date
+    :param ending_minute: user-selected end date
+    :return: dataframe containing all of the individual day charts
     """
-    rng = pd.date_range(dth.dayPreviousTradingDaysBackFrom(dto, days), dto)
-
+    rng = pd.date_range(starting_minute, ending_minute)
+  #  print rng
     s = rng.to_series()
     new_df = []
 
     for i in s:
-
         date_string = dth.genDateString(s[i])
         day_chart = df[df.Date.isin([date_string])]
         new_df.append(day_chart)
 
-    print(new_df)
+    x = pd.concat(new_df)
 
-def earliest_date_from_chart(df=pd.DataFrame):
-    print(df['Date'].min())
-    x = dth.createDateTimeObjectFromStringWithSlash(df['Date'].min())
     return x
 
 
-def latest_date_from_chart(df=pd.DataFrame):
-    print(df['Date'].max())
-    x = dth.createDateTimeObjectFromStringWithSlash(df['Date'].max())
+def return_minutes_in_range(df=pd.DataFrame, starting_minute=datetime.datetime,
+                            ending_minute=datetime.datetime):
+    """
+
+    :param df: takes a dataframe, can be narrowed
+    :param starting_minute:
+    :param ending_minute:
+    :return: dataframe with correct minutes
+    """
+
+    new_df = []
+
+    for index, row in df.iterrows():
+        d = str(row['Date']) + str(row[' Time'])
+        s = pd.to_datetime(d, infer_datetime_format=True)
+
+        if starting_minute < s < ending_minute:
+            new_df.append(row)
+
+    x = pd.concat(new_df)
     return x
 
 
@@ -73,6 +89,10 @@ def add_indicator_to_chart(df=pd.DataFrame, column=str, indicator_name=str, *arg
     df[indicator_name] = sma
     return df
 
+'''
+Panda Series Crossovers for Signals
+'''
+
 
 def return_day_stats(df=pd.DataFrame):
     """
@@ -88,3 +108,6 @@ def return_day_stats(df=pd.DataFrame):
 
     x = {'High': maxi, 'Low': mini, 'Total Volume': volume_sum}
     return x
+
+
+
