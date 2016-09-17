@@ -165,7 +165,7 @@ def attach_stats_from_day(dto=datetime.datetime, df=pd.DataFrame, *argse):
     mini = df[strings.Categories.low].nsmallest(1, 'first')
     volume_sum = df[strings.Categories.volume].sum()
 
-    x = {str(dto.day) + ' High': maxi, str(dto.day) + '  Low': mini, str(dto.day) +
+    x = {str(dto.day) + ' High': maxi, str(dto.day) + ' Low': mini, str(dto.day) +
                             ' Total Volume': volume_sum}
     old_stats = list(argse)
 
