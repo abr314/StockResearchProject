@@ -46,7 +46,7 @@ def createDateTimeObjectFromStringWithSlash(string=str):
     """
 
     dt = pd.to_datetime(string, infer_datetime_format=True)
-    timeit.Timer(dt).timeit()
+#    timeit.Timer(dt).timeit()
     return dt
 
 

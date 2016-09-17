@@ -1,8 +1,9 @@
-import args as args
 import pandas as pd
+from pandas.tseries.offsets import BDay
+
 import datetime_helpers as dth
 from datetime_helpers import datetime
-import numpy
+import strings
 __author__ = 'abr314'
 
 
@@ -23,8 +24,8 @@ def return_day_chart(df=pd.DataFrame, dto=dth.datetime.date):
         print('Error: ' + e)
 
 
-def return_days_in_range(df=pd.DataFrame, starting_minute=datetime.datetime.minute,
-                         ending_minute=datetime.datetime.minute):
+def return_days_in_range(df=pd.DataFrame, starting_minute=datetime.datetime,
+                         ending_minute=datetime.datetime):
 
     """
 
@@ -34,7 +35,7 @@ def return_days_in_range(df=pd.DataFrame, starting_minute=datetime.datetime.minu
     :return: dataframe containing all of the individual day charts
     """
     rng = pd.date_range(starting_minute, ending_minute)
-  #  print rng
+
     s = rng.to_series()
     new_df = []
 
@@ -94,7 +95,7 @@ Panda Series Crossovers for Signals
 '''
 
 
-def return_day_stats(df=pd.DataFrame):
+def return_day_stats(df=pd.DataFrame, *mmm):
     """
     Returns stats for the selected datachart
     :param df:
@@ -102,12 +103,93 @@ def return_day_stats(df=pd.DataFrame):
     :return:
     """
 
-    maxi = df[' High'].nlargest(1, 'first')
-    mini = df[' Low'].nsmallest(1, 'first')
-    volume_sum = df[' Volume'].sum()
+    maxi = df[strings.Categories.high].nlargest(1, 'first')
+    mini = df[strings.Categories.low].nsmallest(1, 'first')
+    close = df[' Close'].mean()
+    volume_sum = df[strings.Categories.volume].sum()
 
-    x = {'High': maxi, 'Low': mini, 'Total Volume': volume_sum}
+    x = {'High': maxi, 'Low': mini, 'Close': close, 'Total Volume': volume_sum}
+    if mmm:
+        x = {"Prev." + ' High': maxi, "Prev." + ' Low': mini, 'Prev.' + ' Close':close, "Prev."+
+              ' Total Volume': volume_sum}
+
     return x
 
+
+def return_stats_for_days(df=pd.DataFrame, starting_minute=datetime.datetime,
+                         ending_minute=datetime.datetime):
+    """
+
+    :param df:
+    :param starting_minute:
+    :param ending_minute:
+    :return:
+    """
+
+    all_days = return_days_in_range(df, starting_minute, ending_minute)
+    new_list = []
+
+    new_df = all_days['Date'].unique()
+
+    for i in new_df:
+
+        dto = dth.createDateTimeObjectFromStringWithSlash(i)
+
+        current_day = datetime.datetime(dto.year,dto.month,dto.day)
+
+        previous_day = (current_day - BDay() * 1)
+
+        h = return_day_chart(df,dto)
+        z = return_day_stats(h)
+        q = return_day_chart(df,previous_day)
+        qs = return_day_stats(q, "SOMETHING")
+        z.update(qs)
+        new_list.append(z)
+
+    return new_list
+
+
+def attach_stats_from_day(dto=datetime.datetime, df=pd.DataFrame, *argse):
+
+    """
+
+    :param argse:
+    :return:
+    :param df: dataframe you want to attach the stats from
+    :param dto: original time
+    :param x: should be status from single day chart
+    :return: original array with status from previous day
+    """
+
+    maxi = df[strings.Categories.high].nlargest(1, 'first')
+    mini = df[strings.Categories.low].nsmallest(1, 'first')
+    volume_sum = df[strings.Categories.volume].sum()
+
+    x = {str(dto.day) + ' High': maxi, str(dto.day) + '  Low': mini, str(dto.day) +
+                            ' Total Volume': volume_sum}
+    old_stats = list(argse)
+
+    old_stats.append(x)
+
+    return old_stats
+
+
+def percent_which_cross_benchmark(df=pd.DataFrame,positive=True,x1=strings.Categories,x2=strings.Categories):
+    """
+
+    :param df: dataframe to search over
+    :param positive: which direction are we checking for? True = Up, False = Down
+    :param x1: first parameter
+    :param x2: second parameter
+    :return: Float: the percentage of results which fit our criteria
+    """
+
+    entries_which_fit_criteria = 0
+    entries_which_do_not_fit_criteria = 0
+
+    # first iterate over the days in the df
+    # get the stats for each day and previous day
+    # compare the stats for the criteria
+    # add results to the ints above
 
 
